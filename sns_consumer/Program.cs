@@ -9,6 +9,9 @@ var queueUrl = await client.GetQueueUrlAsync("customers");
 var request = new ReceiveMessageRequest
 {
     QueueUrl = queueUrl.QueueUrl,
+    AttributeNames = new List<string> { "All" },
+    MessageAttributeNames = new List<string>{"All"}
+    
 };
 
 while (!cts.IsCancellationRequested)
@@ -18,6 +21,8 @@ while (!cts.IsCancellationRequested)
     {
         Console.WriteLine($"Message Id: {message.MessageId}");
         Console.WriteLine($"Message Body: {message.Body}");
+
+        await client.DeleteMessageAsync(queueUrl.QueueUrl, message.ReceiptHandle);
     }
     await Task.Delay(1000);
 }
