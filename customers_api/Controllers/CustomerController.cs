@@ -1,5 +1,6 @@
 using Customers.Api.Contracts.Requests;
 using Customers.Api.Mapping;
+using Customers.Api.Messaging;
 using Customers.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -75,7 +76,7 @@ public class CustomerController : ControllerBase
         {
             return NotFound();
         }
-
+        
         return Ok();
     }
 }
