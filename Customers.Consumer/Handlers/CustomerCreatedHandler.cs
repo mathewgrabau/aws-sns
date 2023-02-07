@@ -15,6 +15,7 @@ public class CustomerCreatedHandler : IRequestHandler<CustomerCreated>
     public Task<Unit> Handle(CustomerCreated request, CancellationToken cancellationToken)
     {
         _logger.LogInformation(request.FullName);
+       // throw new Exception("Something went wrong = want to bounce to the DLQ");
         return Unit.Task;
     }
 }

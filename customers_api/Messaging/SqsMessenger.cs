@@ -1,47 +1,49 @@
-﻿using Amazon.SQS;
-using Amazon.SQS.Model;
+﻿using Amazon.SimpleNotificationService.Model;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+using Amazon.SimpleNotificationService;
 
 namespace Customers.Api.Messaging
 {
-    public class SqsMessenger : ISqsMessenger
+    public class SnsMessenger : ISnsMessenger
     {
-        private readonly IAmazonSQS _sqs;
-        private readonly IOptions<QueueSettings> _queueSettings;
-        private string? _queueUrl;
+        private readonly IAmazonSimpleNotificationService _sns;
+        private readonly IOptions<TopicSettings> _topicSettings;
+        private string? _topicArn;
 
-        public SqsMessenger(IAmazonSQS sqs, IOptions<QueueSettings> queueSettings)
+        public SnsMessenger(IAmazonSimpleNotificationService sns, IOptions<TopicSettings> topicSettings)
         {
-            _sqs = sqs;
-            _queueSettings = queueSettings;
+            _sns = sns;
+            _topicSettings = topicSettings;
         }
 
-        public async Task<SendMessageResponse> SendMessageAsync<T>(T message)
+        public async Task<PublishResponse> PublishMessageAsync<T>(T message)
         {
-            var request = new SendMessageRequest
+            var topicArn = await GetTopicArnAsync();
+            
+            var request = new PublishRequest
             {
-                QueueUrl = await GetQueueUrlAsync(),
-                MessageBody = JsonSerializer.Serialize(message),
+                TopicArn = topicArn,
+                Message = JsonSerializer.Serialize(message),
                 MessageAttributes = new Dictionary<string, MessageAttributeValue>
                 {
                     { "MessageType", new MessageAttributeValue { DataType = "String", StringValue = typeof(T).Name } }
                 }
             };
 
-            return await _sqs.SendMessageAsync(request);
+            return await _sns.PublishAsync(request);
         }
 
-        private async Task<string> GetQueueUrlAsync()
+        private async ValueTask<string> GetTopicArnAsync()
         {
-            if (_queueUrl is not null)
+            if (_topicArn is not null)
             {
-                return _queueUrl;
+                return _topicArn;
             }
 
-            var urlResponse = await _sqs.GetQueueUrlAsync(_queueSettings.Value.Name);
-            _queueUrl = urlResponse.QueueUrl;
-            return _queueUrl;
+            var topicResponse = await _sns.FindTopicAsync(_topicSettings.Value.Name);
+            _topicArn = topicResponse.TopicArn;
+            return _topicArn;
         }
     }
 }
